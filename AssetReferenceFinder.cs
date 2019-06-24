@@ -67,13 +67,13 @@ public class AssetReferenceFinder : EditorWindow
         {
             var assetStackText = new StringBuilder();
 
+            this.ValidateStack();
+
             foreach (var reference in this._searchStack)
             {
                 assetStackText.Insert(0, reference.name + "/");
             }
-
-            this.ValidateStack();
-
+            
             EditorGUILayout.BeginHorizontal();
 
             EditorGUI.BeginDisabledGroup(this._searchStack.Count < 2);
