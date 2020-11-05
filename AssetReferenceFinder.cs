@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Sys = System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
@@ -10,7 +11,17 @@ public class AssetReferenceFinder : EditorWindow
 
     private Object _searchTarget;
     private List<ReferenceObject> _referenceObjects = new List<ReferenceObject>();
-    private List<string> _fileExtensions = new List<string>();
+    private readonly List<string> _fileExtensions = new List<string>()
+    {
+        ".unity",
+        ".prefab",
+        ".asset",
+        ".controller",
+        ".anim",
+        ".mat",
+        ".cs.meta",
+        ".cs"
+    };
     private Stack<Object> _searchStack = new Stack<Object>();
     private Vector2 _scrollPosition;
     private bool _initialised;
@@ -42,17 +53,6 @@ public class AssetReferenceFinder : EditorWindow
 
     private void OnEnable()
     {
-        this._fileExtensions = new List<string>()
-        {
-            ".unity",
-            ".prefab",
-            ".asset",
-            ".controller",
-            ".anim",
-            ".mat",
-            ".cs.meta"
-        };
-
         this._searchTarget = Selection.activeObject;
 
         if (this._searchTarget)
@@ -73,7 +73,7 @@ public class AssetReferenceFinder : EditorWindow
             {
                 assetStackText.Insert(0, reference.name + "/");
             }
-            
+
             EditorGUILayout.BeginHorizontal();
 
             EditorGUI.BeginDisabledGroup(this._searchStack.Count < 2);
@@ -164,26 +164,32 @@ public class AssetReferenceFinder : EditorWindow
                 foreach (var assetPath in assetPaths)
                 {
                     var text = File.ReadAllText(assetPath);
+                    var lines = text.Split('\n');
 
-                    if (text.Contains(searchText))
+                    foreach (var line in lines)
                     {
-                        string pathToReferenceAsset;
-                        string path;
-                        Object asset = null;
-                        ReferenceObject referenceObject = null;
-
-                        pathToReferenceAsset = assetPath.Replace(Application.dataPath, string.Empty);
-                        pathToReferenceAsset = pathToReferenceAsset.Replace(".meta", string.Empty);
-
-                        path = "Assets" + pathToReferenceAsset;
-                        path = path.Replace(@"\", "/");
-
-                        asset = AssetDatabase.LoadAssetAtPath<Object>(path);
-                        referenceObject = this._referenceObjects.Find(x => x.Target == asset);
-
-                        if (referenceObject == null)
+                        if (line.Contains(searchText))
                         {
-                            this._referenceObjects.Add(new ReferenceObject(asset, path));
+                            string pathToReferenceAsset;
+                            string path;
+                            Object asset = null;
+                            ReferenceObject referenceObject = null;
+
+                            pathToReferenceAsset = assetPath.Replace(Application.dataPath, string.Empty);
+                            pathToReferenceAsset = pathToReferenceAsset.Replace(".meta", string.Empty);
+
+                            path = "Assets" + pathToReferenceAsset;
+                            path = path.Replace(@"\", "/");
+
+                            asset = AssetDatabase.LoadAssetAtPath<Object>(path);
+                            referenceObject = this._referenceObjects.Find(x => x.Target == asset);
+
+                            if (referenceObject == null)
+                            {
+                                this._referenceObjects.Add(new ReferenceObject(asset, path));
+                            }
+
+                            break;
                         }
                     }
                 }
